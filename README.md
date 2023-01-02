@@ -1,15 +1,12 @@
 # CMAKEPROGEN
----
 `cmakeprogen` is a cmake project genorator for C/C++
 
 ## Features
----
 - set project name
 - set project version
 - set project description
 
 ## Usage
----
 `cmakeprogen [options] path`
 
 ### Options

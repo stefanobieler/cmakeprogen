@@ -1,0 +1,14 @@
+#ifndef CMAKEPROGEN_CONFIG_HPP
+#define CMAKEPROGEN_CONFIG_HPP
+
+#include <cstdint>
+
+static const char* project_name = "@PROJECT_NAME@";
+static const char* project_version = "@PROJECT_VERSION@";
+
+static constexpr std::int32_t project_version_major{@PROJECT_VERSION_MAJOR@};
+static constexpr std::int32_t project_version_minor{@PROJECT_VERSION_MINOR@};
+static constexpr std::int32_t project_version_patch{@PROJECT_VERSION_PATCH@};
+
+
+#endif

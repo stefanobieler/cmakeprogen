@@ -4,7 +4,6 @@
 #include <memory>
 #include <string>
 
-
 struct cmakeprogen_settings {
     std::string m_project_name;
     std::string m_project_version;

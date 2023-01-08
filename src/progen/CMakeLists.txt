@@ -1,5 +1,8 @@
 set(LIB_NAME progen)
-set(LIB_SRC progen.cpp)
+set(
+    LIB_SRC 
+    filegen.cpp
+    progen.cpp)
 
 
 add_subdirectory(settings)

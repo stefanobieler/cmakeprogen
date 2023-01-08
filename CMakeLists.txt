@@ -6,7 +6,7 @@ project(
     LANGUAGES CXX)
 
 link_directories(
-    ${CMAKE_BINARY_DIR}/lib)
+    ${CMAKE_BINARY_DIR}/linux/lib)
 
 include_directories(include)
 

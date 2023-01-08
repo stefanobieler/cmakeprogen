@@ -14,3 +14,9 @@ target_include_directories(
     PRIVATE 
     ${CMAKE_BINARY_DIR}/linux/include/
     ./)
+
+install(
+    TARGETS ${LIB_NAME}
+    ARCHIVE DESTINATION lib64/cmakeprogen
+    LIBRARY DESTINATION lib64/cmakeprogen
+    PUBLIC_HEADER DESTINATION include/cmakeprogen)

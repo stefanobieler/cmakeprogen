@@ -12,3 +12,10 @@ target_link_libraries(
     ${APP_NAME}
     PRIVATE
     progen)
+
+install(
+    TARGETS ${APP_NAME}
+    RUNTIME DESTINATION bin
+    ARCHIVE DESTINATION lib64/cmakeprogen
+    LIBRARY DESTINATION lib64/cmakeprogen
+    PUBLIC_HEADER DESTINATION include/cmakeprogen)

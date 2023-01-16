@@ -1,4 +1,5 @@
 #include "filegen_i.hpp"
+#include <string>
 #include <fstream>
 #include <iostream>
 #include <iomanip>
@@ -6,6 +7,7 @@
 #include <cstring>
 
 using std::ofstream;
+using std::string;
 
 static const char* tab = "    ";
 
@@ -16,13 +18,16 @@ static void create_cmake_project_file(const cmakeprogen_settings* const settings
     // Write minimum requirement
     file << "cmake_minimum_required(VERSION 3.23)\n\n";
 
+    string language_type = settings->get_language_type_for_cmake_config();
+    string language_version = settings->get_language_version_for_cmake_config();
+
     // Write project information
     file << std::right << std::setfill(' ') 
         << "project(\n"
         << tab << settings->m_project_name << "\n"
         << tab << "VERSION " << settings->m_project_version << "\n"
         << tab << "DESCRIPTION \"" << settings->m_project_description << "\"" << "\n"
-        << tab << "LANGUAGES CXX)" << "\n\n";
+        << tab << "LANGUAGES " << language_type << ")\n\n";
 
     // Add default include directories and include directories
     file << "link_directories(${CMAKE_BINARY_DIR}/linux/lib64)\n"
@@ -32,10 +37,10 @@ static void create_cmake_project_file(const cmakeprogen_settings* const settings
     file << "set(CMAKE_EXPORT_COMPILE_COMMANDS ON)\n\n";
 
     // Setup some variables and compile flags
-    file << "set(CMAKE_CXX_STANDARD 20)\n"
-        << "set(CMAKE_CXX_FLAGS \"-Wall\")\n"
-        << "set(CMAKE_CXX_STANDARD_REQUIRED ON)\n"
-        << "set(CMAKE_CXX_EXTENSIONS OFF)\n\n";
+    file << "set(CMAKE_" << language_type << "_STANDARD " << language_version << ")\n"
+        << "set(CMAKE_" << language_type << "_FLAGS \"-Wall\")\n"
+        << "set(CMAKE_" << language_type << "_STANDARD_REQUIRED ON)\n"
+        << "set(CMAKE_" << language_type << "_EXTENSIONS OFF)\n\n";
 
     //output of binary files
     file << "set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}/linux/bin)\n";

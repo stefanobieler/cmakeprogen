@@ -2,6 +2,7 @@
 #define CMAKEPROGEN_CONVERTION_HPP
 
 #include <string>
+#include "settings/settings.hpp"
 
 
 /*
@@ -13,6 +14,7 @@
 *
 */
 std::string int_to_hex(const int& value);
+language_type string_to_language_type(const std::string& input);
 
 
 #endif

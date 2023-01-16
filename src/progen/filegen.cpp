@@ -8,6 +8,7 @@
 
 using std::ofstream;
 using std::string;
+using std::stringstream;
 
 static const char* tab = "    ";
 
@@ -58,42 +59,74 @@ static void create_cmake_project_file(const cmakeprogen_settings* const settings
 }
 
 static void create_cmake_config_files(const cmakeprogen_settings* const settings) {
+
+    string file_name;
+    string file_path;
+    string file_name_build;
+    if(settings->get_language_type_for_cmake_config() == "CXX") {
+        file_name = "config.hpp.in";
+        file_path = "config/config.hpp.in";
+        file_name_build = "config.hpp";
+    } else {
+        file_name = "config.h.in";
+        file_path = "config/config.h.in";
+        file_name_build = "config.h";
+    }
+
     ofstream file{"config/CMakeLists.txt"};
 
     file << "configure_file(\n"
-        << tab << "config.hpp.in\n"
-        << tab << "\"${CMAKE_BINARY_DIR}/linux/include/config/config.hpp\" ESCAPE_QUOTES)\n";
+        << tab << file_name << "\n"
+        << tab << "\"${CMAKE_BINARY_DIR}/linux/include/config/" << file_name_build << "\" ESCAPE_QUOTES)\n";
 
     file.close();
 
-    file.open("config/config.hpp.in");
+    file.open(file_path);
 
     const size_t MAX_NAME_LENGTH = 64; 
     char uppercase_project_name[MAX_NAME_LENGTH] = {0};
+
 
     for (size_t i = 0; i < MAX_NAME_LENGTH && settings->m_project_name[i] != '\0'; i++) {
         uppercase_project_name[i] = toupper(settings->m_project_name[i]);
     }
 
-    file << "#ifndef " << uppercase_project_name << "_CONFIG_HPP\n"
-        << "#define " << uppercase_project_name << "_CONFIG_HPP\n\n"
-        << "#include <cstdint>\n\n"
+    stringstream include_guard;
+    if(settings->get_language_type_for_cmake_config() == "CXX") {
+        include_guard << "#ifndef " << uppercase_project_name << "_CONFIG_HPP\n"
+                    << "#define " << uppercase_project_name << "_CONFIG_HPP\n\n"
+                    << "#include <cstdint>\n\n";
+    } else {
+        include_guard << "#ifndef " << uppercase_project_name << "_CONFIG_H\n"
+                    << "#define " << uppercase_project_name << "_CONFIG_H\n\n"
+                    << "#include <stdint.h>\n\n";
+    }
+
+    file << include_guard.str()
         << "static const char* project_name = \"@PROJECT_NAME@\";\n"
         << "static const char* project_version = \"@PROJECT_VERSION@\";\n\n"
-        << "static constexpr std::int32_t project_version_major{@PROJECT_VERSION_MAJOR@};\n"
-        << "static constexpr std::int32_t project_version_minor{@PROJECT_VERSION_MINOR@};\n"
-        << "static constexpr std::int32_t project_version_patch{@PROJECT_VERSION_PATCH@};\n\n"
+        << "static const int32_t project_version_major = @PROJECT_VERSION_MAJOR@;\n"
+        << "static const int32_t project_version_minor = @PROJECT_VERSION_MINOR@;\n"
+        << "static const int32_t project_version_patch = @PROJECT_VERSION_PATCH@;\n\n"
         << "#endif\n";
 
     file.close();
 }
 
 static void create_cmake_app_file(const cmakeprogen_settings* const settings) {
+    stringstream file_name;
+
+    if(settings->get_language_type_for_cmake_config() == "CXX") {
+        file_name << settings->m_project_name << ".cpp";
+    } else {
+        file_name << settings->m_project_name << ".c";
+    }
+
     ofstream file{"src/app/CMakeLists.txt"};
 
     // setup name and source files.
     file << "set(APP_NAME " << settings->m_project_name << ")\n"
-        << "set(APP_SRC " << settings->m_project_name << ".cpp)\n\n"
+        << "set(APP_SRC " << file_name.str() << ")\n\n"
         << "add_executable(${APP_NAME} ${APP_SRC})\n\n";
 
     // target include directories
@@ -111,14 +144,22 @@ static void create_cmake_app_file(const cmakeprogen_settings* const settings) {
     file.close();
 }
 
-static void create_cmake_lib_file() {
+static void create_cmake_lib_file(const cmakeprogen_settings* const settings) {
+
+    stringstream file_name;
+    if(settings->get_language_type_for_cmake_config() == "CXX") {
+        file_name << "version.cpp";
+    } else {
+        file_name << "version.c";
+    }
+
     ofstream file{"src/lib/CMakeLists.txt"};
 
     // set name
     file << "set(LIB_NAME lib)\n";
     
     // get sources
-    file << "set(LIB_SRC version.cpp)\n\n";
+    file << "set(LIB_SRC " << file_name.str() << ")\n\n";
 
     // create library
     file << "add_library(${LIB_NAME} STATIC ${LIB_SRC})\n\n";
@@ -140,37 +181,55 @@ static void create_cmake_src_files(const cmakeprogen_settings* const settings) {
     file.close();
 
     create_cmake_app_file(settings);
-    create_cmake_lib_file();
+    create_cmake_lib_file(settings);
 }
 
 static void create_cpp_app_file(const cmakeprogen_settings* const settings) {
-    const size_t MAX_FILE_PATH_LENGTH = 1024;
-    char file_path[MAX_FILE_PATH_LENGTH] = {0};
-    snprintf(file_path, MAX_FILE_PATH_LENGTH, "src/app/%s.cpp", settings->m_project_name.c_str());
+    stringstream file_name;
+    char version_header[]= "version.hpp";
 
-    ofstream file{file_path};
+    if(settings->get_language_type_for_cmake_config() == "CXX") {
+        file_name << "src/app/" << settings->m_project_name << ".cpp";
+    } else {
+        file_name << "src/app/" << settings->m_project_name << ".c";
+        version_header[9] = '\0';
+        version_header[10] = '\0';
+    }
+
+    ofstream file{file_name.str()};
 
     //headers
-    file << "#include \"version.hpp\"\n"
-        << "#include <iostream>\n\n";
-
-    file << "using std::cout;\n\n";
+    file << "#include \"" << version_header << "\"\n"
+        << "#include <stdio.h>\n\n";
 
     //main 
     file << "int main(int argc, char** argv) {\n"
-        << tab << "cout << get_project_name() << \" v\" << get_project_version() << \"\\n\";\n"
-        << tab << "cout << \"Hello World!\" << \"\\n\";\n\n"
+        << tab << "printf(\"%s v%s\\n\", get_project_name(), get_project_version());\n"
+        << tab << "printf(\"Hello World!\\n\");"
         << tab << "return 0;\n"
         << "}\n";
 
     file.close();
 }
 
-static void create_cpp_version_file() {
-    ofstream file("src/lib/version.cpp");
+static void create_cpp_version_file(const cmakeprogen_settings* const settings) {
+    stringstream file_name;
+    char version_header[] = "version.hpp";
+    char config_header[] = "config.hpp";
 
-    file << "#include \"version.hpp\"\n"
-        << "#include \"config/config.hpp\"\n\n";
+    if(settings->get_language_type_for_cmake_config() == "CXX") {
+        file_name << "src/lib/version.cpp";
+    } else {
+        file_name << "src/lib/version.c";
+        version_header[9] = '\0';
+        version_header[10] = '\0';
+        config_header[8] = '\0';
+        config_header[9] = '\0';
+    }
+    ofstream file(file_name.str());
+
+    file << "#include \"" << version_header << "\"\n"
+        << "#include \"config/" << config_header << "\"\n\n";
 
     file << "const char* get_project_name() {\n"
         << tab << "return project_name;\n"
@@ -183,11 +242,22 @@ static void create_cpp_version_file() {
     file.close();
 }
 
-static void create_hpp_version_file() {
-    ofstream file{"include/version.hpp"};
+static void create_hpp_version_file(const cmakeprogen_settings* const settings) {
+    stringstream file_name;
+    char include_guard[] = "VERSION_HPP";
 
-    file << "#ifndef VERSION_HPP\n"
-        << "#define VERSION_HPP\n\n";
+    if(settings->get_language_type_for_cmake_config() == "CXX") {
+        file_name << "include/version.hpp";
+    } else {
+        file_name << "include/version.h";
+        include_guard[9] = '\0';
+        include_guard[10] = '\0';
+    }
+
+    ofstream file{file_name.str()};
+
+    file << "#ifndef " << include_guard << "\n"
+        << "#define " << include_guard << "\n\n";
 
     file << "const char* get_project_name();\n"
         << "const char* get_project_version();\n\n";
@@ -204,8 +274,8 @@ void create_cmake_files(const cmakeprogen_settings* const settings) {
 
 void create_cpp_files(const cmakeprogen_settings* const settings) {
     create_cpp_app_file(settings);
-    create_cpp_version_file();
+    create_cpp_version_file(settings);
 }
 void create_hpp_files(const cmakeprogen_settings* const settings) {
-    create_hpp_version_file();
+    create_hpp_version_file(settings);
 }
